@@ -3,12 +3,18 @@ Webcam Game controller made for Touhou if you are crazy and want another way to 
 ## Binding
 
 ### Left hand bindings
+#### Basic Movement
 Binds left hand (tracks palm) to wasd
+
+#### Focus
 Binds left hand pointer/index raised to shift 
 
 ### Right hand bindings
-Binds right pointer/index raised to j 
-Binds right middle raised to k
+#### Shoot
+Binds right hand pointer/index raised to j 
+
+#### Bomb
+Binds right hand middle raised to k
 
 
 ## Running the program: 
