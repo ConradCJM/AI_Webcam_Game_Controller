@@ -1,0 +1,31 @@
+Webcam Game controller made for Touhou if you are crazy and want another way to play the game
+
+## Binding
+
+### Left hand bindings
+Binds left hand (tracks palm) to wasd
+Binds left hand pointer/index raised to shift 
+
+### Right hand bindings
+Binds right pointer/index raised to j 
+Binds right middle raised to k
+
+
+## Running the program: 
+First clone the repo
+
+### How to run on windows 11
+
+#### Setup
+```powershell
+python -m venv .venv
+
+.\.venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
+```
+
+#### Run the program
+```powershell
+python main.py
+```
