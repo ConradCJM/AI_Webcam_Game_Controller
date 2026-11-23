@@ -20,7 +20,7 @@ Binds right hand middle raised to k
 ## Running the program: 
 First clone the repo
 
-### How to run on windows 11
+### How to run on windows 11 using powershell
 
 #### Setup
 ```powershell
