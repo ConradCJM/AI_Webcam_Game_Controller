@@ -7,6 +7,23 @@ from enum import Enum
 mp_hands = mp.solutions.hands
 mp_draw = mp.solutions.drawing_utils
 
+pyautogui.FAILSAFE = False
+pyautogui.PAUSE = 0
+
+#dead zones
+deadzone_x = 60
+deadzone_y = 60
+
+#frames
+frame_count = 0
+results = None
+
+#hands
+palm_ids = [0, 5, 9, 13, 17]
+
+#finger tips
+tips = [8, 12, 16, 20]
+
 #keys
 w_pressed = False
 s_pressed = False
@@ -34,27 +51,30 @@ vertical = VerticalState.CENTER
 hands = mp_hands.Hands(
     static_image_mode=False,
     max_num_hands=2,
-    min_detection_confidence=0.7,
-    min_tracking_confidence=0.7
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.5
 )
 
+# cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FPS, 60) #mine is capped at around 40 but you might have a better webcam
 
+
 def get_finger_states(hand):
-    tips = [8, 12, 16, 20]
-    fingers = []
-
-    for tip in tips:
-        if hand.landmark[tip].y < hand.landmark[tip - 2].y:
-            fingers.append(1)
-        else:
-            fingers.append(0)
-
-    return fingers
+    l = hand.landmark
+    
+    #compare tip pos to joint 
+    return (
+        l[8].y < l[6].y,
+        l[12].y < l[10].y,
+        l[16].y < l[14].y,
+        l[20].y < l[18].y,
+    )
 cv2.namedWindow("Webcam Controller", cv2.WINDOW_NORMAL)
 
 prev_time = time.time()
+
+
 while True:
     success, frame = cap.read()
 
@@ -81,7 +101,7 @@ while True:
             2
         )
     
-    action = "k HELD" if k_pressed else "k RELEASED"
+    action = "k ACTIVE" if k_pressed else "k UNACTIVE"
 
     cv2.putText(
         frame,
@@ -92,7 +112,7 @@ while True:
         (255, 255, 0),
         2
     )
-    action = "J HELD" if j_pressed else "J RELEASED"
+    action = "J ACTIVE" if j_pressed else "J UNACTIVE"
 
     cv2.putText(
         frame,
@@ -104,7 +124,7 @@ while True:
         2
     )
     
-    action = "shift HELD" if shift_pressed else "shift RELEASED"
+    action = "shift ACTIVE" if shift_pressed else "shift UNACTIVE"
     
     cv2.putText(
         frame,
@@ -116,32 +136,67 @@ while True:
         2
     )
 
-    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    tracking_frame = cv2.resize(frame, (160, 120))
+    rgb = cv2.cvtColor(tracking_frame, cv2.COLOR_BGR2RGB)
 
-    results = hands.process(rgb)
+    frame_count += 1
+    if frame_count % 2 == 0 or frame_count == 1:
+        results = hands.process(rgb)
     
-    control_width = w // 2
+    control_center_x = w // 4
+    control_center_y = h // 2
+
+    box_width = w // 2
+    box_height = h - 20
+    
+    left = control_center_x - box_width // 2
+    right = control_center_x + box_width // 2
+
+    top = control_center_y - box_height // 2
+    bottom = control_center_y + box_height // 2
+
+    cv2.rectangle(
+        frame,
+        (left, top),
+        (right, bottom),
+        (0, 255, 255),
+        2
+    )
+    
+    cv2.line(
+        frame,
+        (left + box_width // 3, top),
+        (left + box_width // 3, bottom),
+        (100, 100, 100),
+        2
+    )
 
     cv2.line(
         frame,
-        (control_width, 0),
-        (control_width, h),
-        (0, 255, 255),
-        3
+        (left + 2 * box_width // 3, top),
+        (left + 2 * box_width // 3, bottom),
+        (100, 100, 100),
+        2
+    )
+
+    cv2.line(
+        frame,
+        (left, top + box_height // 3),
+        (right, top + box_height // 3),
+        (100, 100, 100),
+        2
+    )
+
+    cv2.line(
+        frame,
+        (left, top + 2 * box_height // 3),
+        (right, top + 2 * box_height // 3),
+        (100, 100, 100),
+        2
     )
     
-    #vertical lines
-    cv2.line(frame, (control_width // 3, 0),
-         (control_width // 3, h),
-         (100, 100, 100), 2)
-
-    cv2.line(frame, (2 * control_width // 3, 0),
-         (2 * control_width // 3, h),
-         (100, 100, 100), 2)
-
-    #horizontal lines
-    cv2.line(frame, (0, h // 3), (control_width, h // 3), (100, 100, 100), 2)
-    cv2.line(frame, (0, 2 * h // 3), (control_width, 2 * h // 3), (100, 100, 100), 2)
+    
+    #HANDS STUFF 
     if results.multi_hand_landmarks and results.multi_handedness:
 
         for hand_landmarks, handedness in zip(
@@ -151,13 +206,14 @@ while True:
             label = handedness.classification[0].label
             states = get_finger_states(hand_landmarks)
 
-            mp_draw.draw_landmarks(
-                frame,
-                hand_landmarks,
-                mp_hands.HAND_CONNECTIONS
-            )
+            #lowkey not needed
+            # mp_draw.draw_landmarks(
+            #     frame,
+            #     hand_landmarks,
+            #     mp_hands.HAND_CONNECTIONS
+            # )
             
-            palm_ids = [0, 5, 9, 13, 17]
+            
 
             palm_x = 0
             palm_y = 0
@@ -172,33 +228,31 @@ while True:
             wx = int(palm_x * w)
             wy = int(palm_y * h)
 
-            control_width = w // 2  # left half of screen
-
-            
             
             if label == "Left":
             
                 
 
-                if wx < control_width:
+                control_center_x = w // 4
+                control_center_y = h // 2
 
-                    #x pos
-                    if wx < control_width // 3:
+                if wx < box_width:
+
+                    # Horizontal
+                    if wx < control_center_x - deadzone_x:
                         horizontal = HorizontalState.LEFT
-                        
 
-                    elif wx > 2 * control_width // 3:
+                    elif wx > control_center_x + deadzone_x:
                         horizontal = HorizontalState.RIGHT
-                        
+
                     else:
                         horizontal = HorizontalState.CENTER
 
-
-                    # y pos
-                    if wy < h // 3:
+                    # Vertical
+                    if wy < control_center_y - deadzone_y:
                         vertical = VerticalState.UP
 
-                    elif wy > 2 * h // 3:
+                    elif wy > control_center_y + deadzone_y:
                         vertical = VerticalState.DOWN
 
                     else:
@@ -290,8 +344,11 @@ while True:
                 elif not index_up and shift_pressed:
                     pyautogui.keyUp('shift')
                     shift_pressed = False
-                    
             else:
+                pyautogui.keyUp('shift')
+                shift_pressed = False
+                     
+            if label == "Right":
                 index_up = states[0]  # index finger
 
                 if index_up and not j_pressed:
@@ -312,18 +369,13 @@ while True:
                 elif not index_up and k_pressed:
                     pyautogui.keyUp('k')
                     k_pressed = False
-                    
-                    
-                
-                
-                    
-                
-                
+            else:
+                pyautogui.keyUp('j')
+                j_pressed = False
+                pyautogui.keyUp('k')
+                k_pressed = False
                 
                     
-                
-            
-            
 
             index_tip = hand_landmarks.landmark[8]
 
@@ -355,11 +407,10 @@ while True:
             
 
     cv2.imshow("Webcam Controller", frame)
+    key = cv2.waitKey(1) & 0xFF
 
-    if cv2.waitKey(1) & 0xFF == ord("q"):
+    if key in (ord("q"), ord("Q")):
         break
-    if cv2.waitKey(1) & 0xFF == ord("Q"):
-            break
 
 #release keys or u are lowkey cooked 
 for key in ['w', 'a', 's', 'd', 'j','k', 'shift']:
