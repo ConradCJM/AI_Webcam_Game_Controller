@@ -35,3 +35,5 @@ pip install -r requirements.txt
 ```powershell
 python main.py
 ```
+
+make sure to have touhou open (I tested it with Touhou Koumakyou: New Classic - the Embodiment of Scarlet Devil)
