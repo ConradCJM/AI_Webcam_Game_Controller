@@ -344,9 +344,7 @@ while True:
                 elif not index_up and shift_pressed:
                     pyautogui.keyUp('shift')
                     shift_pressed = False
-            else:
-                pyautogui.keyUp('shift')
-                shift_pressed = False
+            
                      
             if label == "Right":
                 index_up = states[0]  # index finger
@@ -369,11 +367,7 @@ while True:
                 elif not index_up and k_pressed:
                     pyautogui.keyUp('k')
                     k_pressed = False
-            else:
-                pyautogui.keyUp('j')
-                j_pressed = False
-                pyautogui.keyUp('k')
-                k_pressed = False
+            
                 
                     
 
