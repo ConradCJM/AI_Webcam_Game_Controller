@@ -34,6 +34,10 @@ shift_pressed = False
 j_pressed = False
 k_pressed = False
 
+#saftey checks
+right_hand_seen = False
+left_hand_seen = False
+
 #movement states
 class HorizontalState(Enum):
     CENTER = 0
@@ -51,8 +55,8 @@ vertical = VerticalState.CENTER
 hands = mp_hands.Hands(
     static_image_mode=False,
     max_num_hands=2,
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5
+    min_detection_confidence=0.65,
+    min_tracking_confidence=0.65
 )
 
 # cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
@@ -94,7 +98,7 @@ while True:
     cv2.putText(
             frame,
             f"FPS: {int(fps)}",
-            (20, 40),
+            (int(w * 0.57), int(h * 0.1)),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (0, 255, 0),
@@ -146,8 +150,8 @@ while True:
     control_center_x = w // 4
     control_center_y = h // 2
 
-    box_width = w // 2
-    box_height = h - 20
+    box_width = w // 2 - w // 8
+    box_height = h - h // 3
     
     left = control_center_x - box_width // 2
     right = control_center_x + box_width // 2
@@ -213,8 +217,6 @@ while True:
             #     mp_hands.HAND_CONNECTIONS
             # )
             
-            
-
             palm_x = 0
             palm_y = 0
 
@@ -227,36 +229,29 @@ while True:
 
             wx = int(palm_x * w)
             wy = int(palm_y * h)
-
             
             if label == "Left":
+                left_hand_seen = True
             
                 
+                if left <= wx <= right and top <= wy <= bottom:
 
-                control_center_x = w // 4
-                control_center_y = h // 2
-
-                if wx < box_width:
-
-                    # Horizontal
-                    if wx < control_center_x - deadzone_x:
+                    #hor hor hor hor hor
+                    if wx < left + box_width // 3:
                         horizontal = HorizontalState.LEFT
-
-                    elif wx > control_center_x + deadzone_x:
+                    elif wx > left + 2 * box_width // 3:
                         horizontal = HorizontalState.RIGHT
-
                     else:
                         horizontal = HorizontalState.CENTER
 
-                    # Vertical
-                    if wy < control_center_y - deadzone_y:
+                    #vert
+                    if wy < top + box_height // 3:
                         vertical = VerticalState.UP
-
-                    elif wy > control_center_y + deadzone_y:
+                    elif wy > top + 2 * box_height // 3:
                         vertical = VerticalState.DOWN
-
                     else:
                         vertical = VerticalState.CENTER
+                        
                 else:
                     direction = "LEFT HAND OUT OF BOUNDS"
                     
@@ -328,7 +323,7 @@ while True:
                 cv2.putText(
                     frame,
                     direction,
-                    (50, 100),
+                    (int(w * 0.57), int(h * 0.9)),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1,
                     (0, 255, 0),
@@ -347,6 +342,7 @@ while True:
             
                      
             if label == "Right":
+                right_hand_seen = True
                 index_up = states[0]  # index finger
 
                 if index_up and not j_pressed:
@@ -367,6 +363,9 @@ while True:
                 elif not index_up and k_pressed:
                     pyautogui.keyUp('k')
                     k_pressed = False
+            
+                
+                    
             
                 
                     
@@ -394,6 +393,34 @@ while True:
                 (0, 255, 255),
                 cv2.FILLED
             )
+    
+    #toggle buttons off if hand out of frame
+    if not left_hand_seen:
+        if w_pressed:
+            pyautogui.keyUp('w')
+            w_pressed = False
+        if a_pressed:
+            pyautogui.keyUp('a')
+            a_pressed = False
+        if s_pressed:
+            pyautogui.keyUp('s')
+            s_pressed = False
+        if d_pressed:
+            pyautogui.keyUp('d')
+            d_pressed = False
+        if shift_pressed:
+            pyautogui.keyUp('shift')
+            shift_pressed = False
+
+    if not right_hand_seen:
+        if j_pressed:
+            pyautogui.keyUp('j')
+            j_pressed = False
+        if k_pressed:
+            pyautogui.keyUp('k')
+            k_pressed = False
+        
+    
             
             
 
